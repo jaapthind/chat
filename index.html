@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus P2P Liquid Glass Messenger</title>
+    <title>JMessage P2P Liquid Glass Messenger</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.18.3/index.js" type="module"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -488,7 +488,7 @@
         <div class="sidebar" id="sidebar">
             <div class="brand">
                 <i class="fa-brands fa-connectdevelop"></i>
-                Nexus P2P
+                JMessage
             </div>
 
             <div id="initPanel">
@@ -560,6 +560,13 @@
             </div>
 
             <div class="chat-history" id="chatHistory">
+                <div class="msg-group me">
+                    <div class="bubble">Good, cuz we're taking you boys down.</div>
+                </div>
+                <div class="msg-group them">
+                    <div class="bubble">Not a chance.</div>
+                </div>
+                <div class="system-msg">You unsent a message.</div>
                 <div class="system-msg"><i class="fa-solid fa-lock"></i> Messages and files are end-to-end encrypted.</div>
                 </div>
 
@@ -575,7 +582,7 @@
                     <button class="action-add" id="btnAttachFilePrimary" title="Quick Add">
                         <i class="fa-solid fa-plus"></i>
                     </button>
-                    <textarea class="main-input" id="messageInput" placeholder="iMessage (P2P)..." rows="1"></textarea>
+                    <textarea class="main-input" id="messageInput" placeholder="JMessage (P2P)..." rows="1"></textarea>
                     <button class="btn-send" id="btnSend">
                         <i class="fa-solid fa-arrow-up"></i>
                     </button>
@@ -1021,6 +1028,7 @@
             };
             reader.readAsArrayBuffer(slice);
         }
+
 
         // --- Event Listeners ---
 
