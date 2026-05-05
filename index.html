@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus P2P Chat & File Transfer</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        /* ==========================================================================
+           CSS RESET & VARIABLES
+           ========================================================================== */
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bubble-me: #3b82f6;
+            --bubble-them: #334155;
+            --border-radius-sm: 6px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 24px;
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --transition-speed: 0.2s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* ==========================================================================
+           LAYOUT & CONTAINERS
+           ========================================================================== */
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 100vh;
+            display: flex;
+            background-color: var(--bg-secondary);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                height: 90vh;
+                border-radius: var(--border-radius-md);
+                border: 1px solid var(--bg-tertiary);
+            }
+        }
+
+        /* ==========================================================================
+           SIDEBAR (CONNECTION PANEL)
+           ========================================================================== */
+        .sidebar {
+            width: 350px;
+            background-color: var(--bg-primary);
+            border-right: 1px solid var(--bg-tertiary);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 10;
+            transition: transform var(--transition-speed);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-primary);
+        }
+
+        .brand svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--accent-primary);
+        }
+
+        .section-title {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .panel-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: var(--border-radius-md);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .code-display {
+            font-family: monospace;
+            background-color: var(--bg-primary);
+            padding: 10px;
+            border-radius: var(--border-radius-sm);
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 2px;
+            color: var(--success);
+            margin: 10px 0;
+            user-select: all;
+            word-break: break-all;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: var(--border-radius-sm);
+            color: var(--text-primary);
+            font-size: 1rem;
+            margin-bottom: 10px;
+            outline: none;
+            transition: border-color var(--transition-speed);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--bg-tertiary);
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--warning);
+            box-shadow: 0 0 10px var(--warning);
+        }
+
+        .dot.connected {
+            background-color: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .dot.error {
+            background-color: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        /* ==========================================================================
+           MAIN CHAT AREA
+           ========================================================================== */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-secondary);
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .peer-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+
+        .peer-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .peer-status {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .chat-history {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar */
+        .chat-history::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-history::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        .chat-history::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        /* ==========================================================================
+           MESSAGE BUBBLES
+           ========================================================================== */
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .message-wrapper.me {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message-wrapper.them {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: var(--border-radius-md);
+            font-size: 1rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .me .message-bubble {
+            background-color: var(--bubble-me);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .them .message-bubble {
+            background-color: var(--bubble-them);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .system-message {
+            align-self: center;
+            background-color: var(--bg-tertiary);
+            padding: 6px 12px;
+            border-radius: var(--border-radius-lg);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin: 10px 0;
+        }
+
+        /* ==========================================================================
+           FILE SHARING UI
+           ========================================================================== */
+        .file-attachment {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: var(--border-radius-sm);
+            margin-top: 5px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--bg-tertiary);
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-primary);
+        }
+
+        .file-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .download-btn {
+            background-color: transparent;
+            border: 1px solid var(--text-primary);
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            width: auto;
+            margin-top: 8px;
+        }
+
+        .download-btn:hover {
+            background-color: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: var(--bg-tertiary);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--success);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* Drag & Drop Overlay */
+        .drag-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.9);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 4px dashed var(--accent-primary);
+            border-radius: var(--border-radius-md);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed);
+        }
+
+        .drag-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .drag-overlay svg {
+            width: 80px;
+            height: 80px;
+            fill: var(--accent-primary);
+            margin-bottom: 20px;
+        }
+
+        /* ==========================================================================
+           INPUT AREA
+           ========================================================================== */
+        .chat-input-container {
+            padding: 20px;
+            background-color: var(--bg-primary);
+            border-top: 1px solid var(--bg-tertiary);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .icon-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+            padding: 0;
+        }
+
+        .icon-btn:hover {
+            background-color: #475569;
+        }
+
+        .icon-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-primary);
+        }
+
+        .message-input {
+            flex: 1;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: var(--border-radius-lg);
+            padding: 12px 20px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .message-input:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .send-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--accent-primary);
+            padding: 0;
+        }
+
+        .send-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+            margin-left: 3px; /* visual center adjustment */
+        }
+
+        /* ==========================================================================
+           ANIMATIONS & UTILITIES
+           ========================================================================== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        .disabled-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.7);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .disabled-overlay p {
+            background: var(--bg-secondary);
+            padding: 10px 20px;
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--bg-tertiary);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="sidebar" id="sidebar">
+            <div class="brand">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                Nexus P2P
+            </div>
+
+            <div id="initPanel">
+                <div class="panel-card">
+                    <div class="section-title">Your Identity Code</div>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
+                        Generating secure WebRTC peer ID...
+                    </p>
+                    <div class="code-display" id="myPeerId">...</div>
+                    <button class="btn-secondary" id="btnCopyCode">
+                        <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                        Copy My Code
+                    </button>
+                </div>
+
+                <div class="panel-card">
+                    <div class="section-title">Connect to Friend</div>
+                    <input type="text" id="targetPeerId" placeholder="Paste friend's code here..." autocomplete="off">
+                    <button class="btn-primary" id="btnConnect">
+                        <svg style="width:18px;height:18px;fill:currentColor" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                        Establish Connection
+                    </button>
+                </div>
+            </div>
+
+            <div id="activeConnectionPanel" class="hidden">
+                <div class="panel-card">
+                    <div class="section-title">Connection Status</div>
+                    <p style="color: var(--success); font-weight: bold; margin-bottom: 15px;">Encrypted P2P Tunnel Active</p>
+                    <button class="btn-danger" id="btnDisconnect">Disconnect Session</button>
+                </div>
+            </div>
+
+            <div style="flex: 1;"></div>
+
+            <div class="status-indicator" id="globalStatus">
+                <div class="dot" id="statusDot"></div>
+                <span id="statusText">Initializing Node...</span>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            
+            <div id="inputBlocker" class="disabled-overlay">
+                <p>Waiting for connection...</p>
+            </div>
+
+            <div class="drag-overlay" id="dragOverlay">
+                <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.36 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                <h2>Drop file to send securely</h2>
+            </div>
+
+            <div class="chat-header">
+                <div class="peer-info">
+                    <div class="avatar" id="peerAvatar">?</div>
+                    <div>
+                        <div class="peer-name" id="peerNameHeader">Not Connected</div>
+                        <div class="peer-status" id="peerSubHeader">Waiting for peer...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-history" id="chatHistory">
+                <div class="system-message">Welcome to Nexus P2P. End-to-end encrypted.</div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput">
+                    <button class="icon-btn" id="btnAttachFile" title="Send File">
+                        <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
+                    </button>
+                </div>
+                
+                <input type="text" class="message-input" id="messageInput" placeholder="Type a secure message..." autocomplete="off">
+                
+                <button class="send-btn" id="btnSend" title="Send Message">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * P2P Chat Application Logic
+         * Utilizes PeerJS for reliable signaling and automated SDP exchange.
+         * Implements DataChannel chunking to support large file transfers safely over WebRTC.
+         */
+
+        // --- DOM Elements ---
+        const UI = {
+            myPeerId: document.getElementById('myPeerId'),
+            btnCopyCode: document.getElementById('btnCopyCode'),
+            targetPeerId: document.getElementById('targetPeerId'),
+            btnConnect: document.getElementById('btnConnect'),
+            btnDisconnect: document.getElementById('btnDisconnect'),
+            initPanel: document.getElementById('initPanel'),
+            activeConnectionPanel: document.getElementById('activeConnectionPanel'),
+            statusDot: document.getElementById('statusDot'),
+            statusText: document.getElementById('statusText'),
+            chatHistory: document.getElementById('chatHistory'),
+            messageInput: document.getElementById('messageInput'),
+            btnSend: document.getElementById('btnSend'),
+            fileInput: document.getElementById('fileInput'),
+            btnAttachFile: document.getElementById('btnAttachFile'),
+            inputBlocker: document.getElementById('inputBlocker'),
+            dragOverlay: document.getElementById('dragOverlay'),
+            peerNameHeader: document.getElementById('peerNameHeader'),
+            peerSubHeader: document.getElementById('peerSubHeader'),
+            peerAvatar: document.getElementById('peerAvatar')
+        };
+
+        // --- Application State ---
+        let peer = null;
+        let conn = null;
+        const CHUNK_SIZE = 16384; // 16KB max for stable WebRTC data channel transmission
+        
+        // File receiving state
+        let receivingFile = false;
+        let incomingFileInfo = null;
+        let incomingFileData = [];
+        let bytesReceived = 0;
+        let currentFileUI = null; // Reference to the DOM element showing progress
+
+        // --- Initialization ---
+        function initApp() {
+            updateStatus('Connecting to signaling server...', 'warning');
+            
+            // Generate a random, easy to share code (alphanumeric, 6 chars)
+            const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            // Initialize PeerJS
+            // Using public cloud server. No backend required by user.
+            peer = new Peer(randomId, {
+                debug: 2,
+                config: {'iceServers': [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
+                ]}
+            });
+
+            // PeerJS Events
+            peer.on('open', (id) => {
+                UI.myPeerId.textContent = id;
+                updateStatus('Node Ready. Awaiting connection.', 'warning');
+                UI.statusDot.className = 'dot'; // Yellow
+            });
+
+            // Handle incoming connection
+            peer.on('connection', (connection) => {
+                // If we already have a connection, reject new ones
+                if (conn && conn.open) {
+                    connection.on('open', () => {
+                        connection.send({ type: 'system', data: 'Peer is currently busy.' });
+                        setTimeout(() => connection.close(), 500);
+                    });
+                    return;
+                }
+                setupConnection(connection);
+            });
+
+            peer.on('error', (err) => {
+                console.error('PeerJS Error:', err);
+                updateStatus(`Error: ${err.type}`, 'error');
+                if (err.type === 'peer-unavailable') {
+                    appendSystemMessage('Failed to connect: Friend code not found.');
+                }
+            });
+        }
+
+        // --- Connection Management ---
+        function setupConnection(connection) {
+            conn = connection;
+            updateStatus('Negotiating P2P tunnel...', 'warning');
+
+            conn.on('open', () => {
+                updateStatus('Connected', 'connected');
+                togglePanels(true);
+                UI.peerNameHeader.textContent = `Peer: ${conn.peer}`;
+                UI.peerSubHeader.textContent = 'Encrypted Channel Active';
+                UI.peerAvatar.textContent = conn.peer.substring(0, 2);
+                appendSystemMessage('Secure peer-to-peer connection established.');
+            });
+
+            conn.on('data', handleIncomingData);
+
+            conn.on('close', () => {
+                handleDisconnection();
+            });
+
+            conn.on('error', (err) => {
+                console.error('Connection error:', err);
+                handleDisconnection();
+            });
+        }
+
+        function handleDisconnection() {
+            updateStatus('Node Ready. Awaiting connection.', 'warning');
+            togglePanels(false);
+            UI.peerNameHeader.textContent = 'Not Connected';
+            UI.peerSubHeader.textContent = 'Waiting for peer...';
+            UI.peerAvatar.textContent = '?';
+            appendSystemMessage('Peer disconnected. Channel closed.');
+            conn = null;
+            // Reset file states
+            receivingFile = false;
+            incomingFileData = [];
+        }
+
+        // --- UI Updates ---
+        function updateStatus(text, state) {
+            UI.statusText.textContent = text;
+            UI.statusDot.className = `dot ${state}`;
+        }
+
+        function togglePanels(isConnected) {
+            if (isConnected) {
+                UI.initPanel.classList.add('hidden');
+                UI.activeConnectionPanel.classList.remove('hidden');
+                UI.inputBlocker.classList.add('hidden');
+            } else {
+                UI.initPanel.classList.remove('hidden');
+                UI.activeConnectionPanel.classList.add('hidden');
+                UI.inputBlocker.classList.remove('hidden');
+            }
+        }
+
+        function scrollToBottom() {
+            UI.chatHistory.scrollTop = UI.chatHistory.scrollHeight;
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function getTimeString() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // --- Message Rendering ---
+        function appendSystemMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'system-message';
+            div.textContent = text;
+            UI.chatHistory.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendTextMessage(sender, text) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${sender === 'me' ? 'me' : 'them'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = text; // textContent prevents XSS HTML injection
+
+            const time = document.createElement('div');
+            time.className = 'message-time';
+            time.textContent = getTimeString();
+
+            wrapper.appendChild(bubble);
+            wrapper.appendChild(time);
+            UI.chatHistory.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function createFileUI(sender, filename, filesize, id) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${sender === 'me' ? 'me' : 'them'}`;
+            wrapper.id = `file-wrapper-${id}`;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.style.backgroundColor = 'transparent';
+            bubble.style.padding = '0';
+            bubble.style.boxShadow = 'none';
+
+            const attachment = document.createElement('div');
+            attachment.className = 'file-attachment';
+
+            const icon = document.createElement('div');
+            icon.className = 'file-icon';
+            icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>';
+
+            const info = document.createElement('div');
+            info.className = 'file-info';
+            
+            const nameEl = document.createElement('div');
+            nameEl.className = 'file-name';
+            nameEl.textContent = filename;
+            nameEl.title = filename;
+
+            const sizeEl = document.createElement('div');
+            sizeEl.className = 'file-size';
+            sizeEl.textContent = formatBytes(filesize);
+
+            // Progress Bar Container
+            const progressContainer = document.createElement('div');
+            progressContainer.className = 'progress-container';
+            progressContainer.id = `progress-container-${id}`;
+            
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-bar';
+            progressBar.id = `progress-bar-${id}`;
+            
+            progressContainer.appendChild(progressBar);
+
+            info.appendChild(nameEl);
+            info.appendChild(sizeEl);
+            info.appendChild(progressContainer);
+
+            // Container for download button (hidden initially)
+            const actionContainer = document.createElement('div');
+            actionContainer.id = `action-container-${id}`;
+
+            attachment.appendChild(icon);
+            attachment.appendChild(info);
+            
+            bubble.appendChild(attachment);
+            bubble.appendChild(actionContainer);
+
+            const time = document.createElement('div');
+            time.className = 'message-time';
+            time.textContent = getTimeString();
+
+            wrapper.appendChild(bubble);
+            wrapper.appendChild(time);
+            UI.chatHistory.appendChild(wrapper);
+            scrollToBottom();
+
+            return {
+                progressBar: progressBar,
+                progressContainer: progressContainer,
+                actionContainer: actionContainer
+            };
+        }
+
+        // --- Data Handling & File Chunking ---
+
+        function handleIncomingData(data) {
+            if (data.type === 'text') {
+                appendTextMessage('them', data.payload);
+            } 
+            else if (data.type === 'system') {
+                appendSystemMessage(data.data);
+            }
+            else if (data.type === 'file-start') {
+                // Prepare to receive file
+                receivingFile = true;
+                incomingFileInfo = data.meta;
+                incomingFileData = [];
+                bytesReceived = 0;
+                
+                // Create UI
+                currentFileUI = createFileUI('them', incomingFileInfo.name, incomingFileInfo.size, incomingFileInfo.id);
+            }
+            else if (data.type === 'file-chunk') {
+                if (!receivingFile) return;
+                
+                // Collect chunk
+                const chunk = new Uint8Array(data.payload);
+                incomingFileData.push(chunk);
+                bytesReceived += chunk.byteLength;
+
+                // Update Progress UI
+                if (currentFileUI) {
+                    const percent = Math.min((bytesReceived / incomingFileInfo.size) * 100, 100);
+                    currentFileUI.progressBar.style.width = `${percent}%`;
+                }
+
+                // Check if complete
+                if (bytesReceived >= incomingFileInfo.size) {
+                    finalizeIncomingFile();
+                } else {
+                    // Tell sender we are ready for next chunk (throttling to prevent overflow)
+                    conn.send({ type: 'file-ack', id: incomingFileInfo.id });
+                }
+            }
+            else if (data.type === 'file-ack') {
+                // Sender received ack, send next chunk
+                sendNextChunk();
+            }
+        }
+
+        function finalizeIncomingFile() {
+            receivingFile = false;
+            
+            // Reconstruct Blob
+            const blob = new Blob(incomingFileData, { type: incomingFileInfo.mimeType });
+            const url = URL.createObjectURL(blob);
+
+            // Update UI: Hide progress, show download
+            if (currentFileUI) {
+                currentFileUI.progressContainer.style.display = 'none';
+                
+                const btn = document.createElement('button');
+                btn.className = 'btn-primary download-btn';
+                btn.innerHTML = 'Save File';
+                btn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = incomingFileInfo.name;
+                    a.click();
+                };
+                currentFileUI.actionContainer.appendChild(btn);
+            }
+            
+            appendSystemMessage(`File received: ${incomingFileInfo.name}`);
+            incomingFileData = []; // clear memory
+        }
+
+        // --- Sending Logic ---
+
+        // State for sending files
+        let fileToSend = null;
+        let fileReader = null;
+        let currentChunk = 0;
+        let totalChunks = 0;
+        let sendingFileId = null;
+        let sendingFileUI = null;
+
+        function sendMessage() {
+            const text = UI.messageInput.value.trim();
+            if (!text || !conn || !conn.open) return;
+
+            // Send text over DataChannel
+            conn.send({ type: 'text', payload: text });
+            
+            // Render locally
+            appendTextMessage('me', text);
+            UI.messageInput.value = '';
+            UI.messageInput.focus();
+        }
+
+        function processAndSendFile(file) {
+            if (!conn || !conn.open) return;
+            if (fileToSend) {
+                alert("A file transfer is already in progress.");
+                return;
+            }
+
+            fileToSend = file;
+            sendingFileId = Date.now().toString();
+            totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            currentChunk = 0;
+
+            // Create Sender UI
+            sendingFileUI = createFileUI('me', file.name, file.size, sendingFileId);
+
+            // Send Metadata
+            conn.send({
+                type: 'file-start',
+                meta: {
+                    id: sendingFileId,
+                    name: file.name,
+                    size: file.size,
+                    mimeType: file.type || 'application/octet-stream'
+                }
+            });
+
+            // Delay slighty to let receiver UI initialize, then start sending
+            setTimeout(sendNextChunk, 100);
+        }
+
+        function sendNextChunk() {
+            if (!fileToSend || !conn || !conn.open) return;
+
+            const start = currentChunk * CHUNK_SIZE;
+            const end = Math.min(fileToSend.size, start + CHUNK_SIZE);
+            const slice = fileToSend.slice(start, end);
+
+            fileReader = new FileReader();
+            fileReader.onload = (e) => {
+                const arrayBuffer = e.target.result;
+                conn.send({
+                    type: 'file-chunk',
+                    id: sendingFileId,
+                    payload: arrayBuffer
+                });
+
+                currentChunk++;
+                
+                // Update Sender Progress UI
+                const percent = Math.min(((currentChunk * CHUNK_SIZE) / fileToSend.size) * 100, 100);
+                if (sendingFileUI) {
+                    sendingFileUI.progressBar.style.width = `${percent}%`;
+                }
+
+                // If finished sending
+                if (currentChunk >= totalChunks) {
+                    if (sendingFileUI) {
+                        sendingFileUI.progressContainer.style.display = 'none';
+                        const check = document.createElement('div');
+                        check.style.color = 'var(--success)';
+                        check.style.fontSize = '0.8rem';
+                        check.style.marginTop = '8px';
+                        check.innerHTML = '✓ Sent completely';
+                        sendingFileUI.actionContainer.appendChild(check);
+                    }
+                    appendSystemMessage(`File sent: ${fileToSend.name}`);
+                    
+                    // Reset sender state
+                    fileToSend = null;
+                    fileReader = null;
+                    sendingFileId = null;
+                    sendingFileUI = null;
+                }
+                // Note: The loop continues when receiver sends 'file-ack' back to throttle.
+            };
+            fileReader.readAsArrayBuffer(slice);
+        }
+
+
+        // --- Event Listeners ---
+
+        UI.btnCopyCode.addEventListener('click', () => {
+            const code = UI.myPeerId.textContent;
+            if (code !== '...') {
+                navigator.clipboard.writeText(code).then(() => {
+                    const originalText = UI.btnCopyCode.innerHTML;
+                    UI.btnCopyCode.innerHTML = '✓ Copied!';
+                    setTimeout(() => { UI.btnCopyCode.innerHTML = originalText; }, 2000);
+                });
+            }
+        });
+
+        UI.btnConnect.addEventListener('click', () => {
+            const targetId = UI.targetPeerId.value.trim().toUpperCase();
+            if (!targetId) return;
+            if (targetId === peer.id) {
+                alert("You cannot connect to yourself.");
+                return;
+            }
+            
+            updateStatus('Initiating connection...', 'warning');
+            const connection = peer.connect(targetId, { reliable: true });
+            setupConnection(connection);
+        });
+
+        UI.btnDisconnect.addEventListener('click', () => {
+            if (conn) {
+                conn.close();
+            }
+        });
+
+        UI.btnSend.addEventListener('click', sendMessage);
+        
+        UI.messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // File Input bridging
+        UI.btnAttachFile.addEventListener('click', () => {
+            UI.fileInput.click();
+        });
+
+        UI.fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                processAndSendFile(e.target.files[0]);
+                // Reset input so same file can be selected again if needed
+                UI.fileInput.value = ''; 
+            }
+        });
+
+        // Drag and Drop Logic
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (conn && conn.open) {
+                UI.dragOverlay.classList.add('active');
+            }
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            // Prevent flickering when dragging over child elements
+            if (e.relatedTarget === null || !e.relatedTarget.closest('.app-container')) {
+                UI.dragOverlay.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            UI.dragOverlay.classList.remove('active');
+            
+            if (conn && conn.open && e.dataTransfer.files.length > 0) {
+                processAndSendFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Boot Application
+        initApp();
+
+    </script>
+</body>
+</html>
