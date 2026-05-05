@@ -3,663 +3,623 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus P2P Chat & File Transfer</title>
+    <title>Nexus P2P Liquid Glass Messenger</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.18.3/index.js" type="module"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* ==========================================================================
-           CSS RESET & VARIABLES
-           ========================================================================== */
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&display=swap');
+
         :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-primary: #3b82f6;
-            --accent-hover: #2563eb;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --bubble-me: #3b82f6;
-            --bubble-them: #334155;
-            --border-radius-sm: 6px;
-            --border-radius-md: 12px;
-            --border-radius-lg: 24px;
-            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            --transition-speed: 0.2s;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            --ios-blue: #007aff;
+            --ios-gray: #e5e5ea;
+            --ios-dark-gray: #3a3a3c;
+            --bg-gradient: linear-gradient(135deg, #1a1c2c 0%, #4a192c 100%);
+            --text-light: #ffffff;
+            --text-dark: #000000;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
-            font-family: var(--font-family);
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            background: var(--bg-gradient);
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            color: var(--text-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
-        /* ==========================================================================
-           LAYOUT & CONTAINERS
-           ========================================================================== */
+        /* Abstract Background Elements */
+        .bg-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.6;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #ff2a5f; animation: float 20s infinite alternate; }
+        .blob-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: #007aff; animation: float 25s infinite alternate-reverse; }
+        .blob-3 { top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40vw; height: 40vw; background: #8a2be2; animation: pulse 15s infinite; }
+
+        @keyframes float { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(100px, 50px) rotate(45deg); } }
+        @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); opacity: 0.4;} 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.7;} 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4;} }
+
+        /* Liquid Glass Container */
         .app-container {
-            width: 100%;
-            max-width: 1200px;
-            height: 100vh;
+            width: 95vw;
+            max-width: 1400px;
+            height: 90vh;
+            background: rgba(20, 20, 25, 0.6);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             display: flex;
-            background-color: var(--bg-secondary);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
             position: relative;
         }
 
-        @media (min-width: 768px) {
-            .app-container {
-                height: 90vh;
-                border-radius: var(--border-radius-md);
-                border: 1px solid var(--bg-tertiary);
-            }
-        }
-
-        /* ==========================================================================
-           SIDEBAR (CONNECTION PANEL)
-           ========================================================================== */
+        /* --- Sidebar (Connection) --- */
         .sidebar {
-            width: 350px;
-            background-color: var(--bg-primary);
-            border-right: 1px solid var(--bg-tertiary);
+            width: 380px;
+            background: rgba(255, 255, 255, 0.03);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 25px;
             z-index: 10;
-            transition: transform var(--transition-speed);
+            transition: var(--transition);
         }
 
         .brand {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 30px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--accent-primary);
+            gap: 15px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+            text-shadow: 0 2px 10px rgba(255,255,255,0.2);
         }
+        .brand i { color: #a5b4fc; -webkit-text-fill-color: initial; text-shadow: none; font-size: 2rem;}
 
-        .brand svg {
-            width: 32px;
-            height: 32px;
-            fill: var(--accent-primary);
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
         }
 
         .section-title {
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-            margin-bottom: 10px;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 15px;
             font-weight: 600;
         }
 
-        .panel-card {
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--bg-tertiary);
-            border-radius: var(--border-radius-md);
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
         .code-display {
-            font-family: monospace;
-            background-color: var(--bg-primary);
-            padding: 10px;
-            border-radius: var(--border-radius-sm);
-            font-size: 1.2rem;
+            font-family: 'Courier New', Courier, monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 1.4rem;
             text-align: center;
-            letter-spacing: 2px;
-            color: var(--success);
-            margin: 10px 0;
+            letter-spacing: 4px;
+            color: #34d399;
+            margin: 15px 0;
+            border: 1px inset rgba(255,255,255,0.1);
             user-select: all;
-            word-break: break-all;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            text-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
         }
 
         input[type="text"] {
             width: 100%;
-            padding: 12px;
-            background-color: var(--bg-primary);
-            border: 1px solid var(--bg-tertiary);
-            border-radius: var(--border-radius-sm);
-            color: var(--text-primary);
-            font-size: 1rem;
-            margin-bottom: 10px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
             outline: none;
-            transition: border-color var(--transition-speed);
+            transition: var(--transition);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
         }
-
         input[type="text"]:focus {
-            border-color: var(--accent-primary);
+            border-color: var(--ios-blue);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3), inset 0 2px 5px rgba(0,0,0,0.2);
         }
+        input[type="text"]::placeholder { color: rgba(255,255,255,0.4); }
 
         button {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             border: none;
-            border-radius: var(--border-radius-sm);
-            font-size: 1rem;
-            font-weight: bold;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color var(--transition-speed), transform 0.1s;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
         }
-
-        button:active {
-            transform: scale(0.98);
+        button::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(45deg);
+            transition: all 0.5s;
+            opacity: 0;
         }
+        button:hover::after { opacity: 1; transform: rotate(45deg) translate(50%, 50%); }
+        button:active { transform: scale(0.97); }
 
-        .btn-primary {
-            background-color: var(--accent-primary);
-            color: white;
-        }
+        .btn-ios { background: var(--ios-blue); color: white; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4); }
+        .btn-ios:hover { background: #0066d6; box-shadow: 0 6px 20px rgba(0, 122, 255, 0.6); }
+        .btn-glass { background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .btn-glass:hover { background: rgba(255, 255, 255, 0.2); }
+        .btn-danger { background: rgba(255, 59, 48, 0.8); color: white; box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4); }
+        .btn-danger:hover { background: rgba(255, 59, 48, 1); }
 
-        .btn-primary:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .btn-secondary {
-            background-color: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-
-        .btn-secondary:hover {
-            background-color: #475569;
-        }
-
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        .status-indicator {
+        .status-dock {
+            margin-top: auto;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid var(--bg-tertiary);
+            gap: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
         }
-
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: var(--warning);
-            box-shadow: 0 0 10px var(--warning);
+        .status-pulse {
+            width: 12px; height: 12px; border-radius: 50%;
+            background: #ffcc00; box-shadow: 0 0 10px #ffcc00;
+            animation: breathe 2s infinite;
         }
+        .status-pulse.connected { background: #34c759; box-shadow: 0 0 15px #34c759; animation: none; }
+        .status-pulse.error { background: #ff3b30; box-shadow: 0 0 15px #ff3b30; animation: flash 1s infinite; }
+        @keyframes breathe { 0% { opacity: 0.5; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.5; transform: scale(0.8); } }
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        .dot.connected {
-            background-color: var(--success);
-            box-shadow: 0 0 10px var(--success);
-        }
-
-        .dot.error {
-            background-color: var(--danger);
-            box-shadow: 0 0 10px var(--danger);
-        }
-
-        /* ==========================================================================
-           MAIN CHAT AREA
-           ========================================================================== */
+        /* --- Main Chat Area --- */
         .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background-color: var(--bg-secondary);
             position: relative;
+            background: rgba(0, 0, 0, 0.1);
         }
 
         .chat-header {
-            padding: 20px;
-            background-color: var(--bg-primary);
-            border-bottom: 1px solid var(--bg-tertiary);
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            z-index: 5;
         }
 
-        .peer-info {
+        .peer-profile {
             display: flex;
             align-items: center;
             gap: 15px;
         }
 
-        .avatar {
-            width: 40px;
-            height: 40px;
+        .avatar-ring {
+            width: 50px; height: 50px;
             border-radius: 50%;
-            background-color: var(--bg-tertiary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: var(--text-secondary);
+            padding: 3px;
+            background: linear-gradient(135deg, #007aff, #34c759);
+            animation: spin 4s linear infinite;
+        }
+        .avatar-ring.offline { background: rgba(255,255,255,0.2); animation: none; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .avatar-inner {
+            width: 100%; height: 100%;
+            background: #1c1c1e;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: bold; color: white;
         }
 
-        .peer-name {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
+        .peer-details h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 4px; }
+        .peer-details p { font-size: 0.85rem; color: rgba(255,255,255,0.6); display: flex; align-items: center; gap: 5px; }
+        .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #34c759; }
 
-        .peer-status {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+        .header-actions { display: flex; gap: 15px; }
+        .icon-action {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: var(--transition); color: white; font-size: 1.1rem;
         }
+        .icon-action:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
 
+        /* --- Chat History (iOS iMessage Style) --- */
         .chat-history {
             flex: 1;
-            padding: 20px;
+            padding: 30px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 2px; /* Tight gap for grouped messages */
             scroll-behavior: smooth;
         }
+        .chat-history::-webkit-scrollbar { width: 6px; }
+        .chat-history::-webkit-scrollbar-track { background: transparent; }
+        .chat-history::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 
-        /* Custom Scrollbar */
-        .chat-history::-webkit-scrollbar {
-            width: 8px;
-        }
-        .chat-history::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-        }
-        .chat-history::-webkit-scrollbar-thumb {
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-        }
+        .msg-group { display: flex; flex-direction: column; margin-bottom: 15px; max-width: 75%; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; transform: translateY(20px); }
+        .msg-group.me { align-self: flex-end; align-items: flex-end; }
+        .msg-group.them { align-self: flex-start; align-items: flex-start; }
 
-        /* ==========================================================================
-           MESSAGE BUBBLES
-           ========================================================================== */
-        .message-wrapper {
-            display: flex;
-            flex-direction: column;
-            max-width: 75%;
-            animation: fadeIn 0.3s ease;
-        }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
 
-        .message-wrapper.me {
-            align-self: flex-end;
-            align-items: flex-end;
-        }
-
-        .message-wrapper.them {
-            align-self: flex-start;
-            align-items: flex-start;
-        }
-
-        .message-bubble {
-            padding: 12px 16px;
-            border-radius: var(--border-radius-md);
-            font-size: 1rem;
+        .bubble {
+            padding: 12px 18px;
+            font-size: 1.05rem;
             line-height: 1.4;
             word-wrap: break-word;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+            margin-bottom: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        .me .message-bubble {
-            background-color: var(--bubble-me);
+        /* iOS Bubble Styling & Tails */
+        .me .bubble {
+            background: linear-gradient(135deg, #007aff, #0056b3);
             color: white;
-            border-bottom-right-radius: 4px;
+            border-radius: 20px 5px 5px 20px;
+        }
+        .me .bubble:first-child { border-top-right-radius: 20px; }
+        .me .bubble:last-child { border-bottom-right-radius: 20px; }
+        .me .bubble:last-child::after {
+            content: ''; position: absolute; bottom: 0; right: -8px; width: 20px; height: 20px;
+            background: linear-gradient(135deg, #007aff, #0056b3); border-bottom-left-radius: 16px; z-index: -1;
+        }
+        .me .bubble:last-child::before {
+            content: ''; position: absolute; bottom: -2px; right: -10px; width: 20px; height: 22px;
+            background: #1f1b2e; /* Match approximate background */ border-bottom-left-radius: 16px; z-index: -1;
         }
 
-        .them .message-bubble {
-            background-color: var(--bubble-them);
-            color: var(--text-primary);
-            border-bottom-left-radius: 4px;
+        .them .bubble {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            border-radius: 5px 20px 20px 5px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .them .bubble:first-child { border-top-left-radius: 20px; }
+        .them .bubble:last-child { border-bottom-left-radius: 20px; }
+        .them .bubble:last-child::after {
+            content: ''; position: absolute; bottom: 0; left: -8px; width: 20px; height: 20px;
+            background: rgba(255, 255, 255, 0.15); border-bottom-right-radius: 16px; z-index: -1;
+        }
+        .them .bubble:last-child::before {
+            content: ''; position: absolute; bottom: -2px; left: -10px; width: 20px; height: 22px;
+            background: #1f1b2e; border-bottom-right-radius: 16px; z-index: -1;
         }
 
-        .message-time {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
+        .msg-meta { font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 4px; padding: 0 10px; opacity: 0; transition: opacity 0.2s; }
+        .msg-group:hover .msg-meta { opacity: 1; }
+
+        .system-msg {
+            align-self: center; background: rgba(0,0,0,0.3); padding: 6px 16px; border-radius: 20px;
+            font-size: 0.8rem; color: rgba(255,255,255,0.6); margin: 15px 0; border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(5px);
         }
 
-        .system-message {
-            align-self: center;
-            background-color: var(--bg-tertiary);
-            padding: 6px 12px;
-            border-radius: var(--border-radius-lg);
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin: 10px 0;
-        }
-
-        /* ==========================================================================
-           FILE SHARING UI
-           ========================================================================== */
-        .file-attachment {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background-color: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: var(--border-radius-sm);
+        /* --- Rich Media Previews --- */
+        .media-preview {
+            max-width: 300px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.3);
             margin-top: 5px;
-            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
         }
-
-        .file-icon {
-            width: 40px;
-            height: 40px;
-            background-color: var(--bg-tertiary);
-            border-radius: var(--border-radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .media-preview img, .media-preview video { width: 100%; display: block; object-fit: cover; }
+        .media-preview audio { width: 100%; height: 40px; outline: none; }
+        
+        /* File Attachment Styling */
+        .file-card {
+            display: flex; align-items: center; gap: 15px; padding: 15px;
+            background: rgba(0,0,0,0.2); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
+            min-width: 250px;
         }
+        .file-icon-large { width: 50px; height: 50px; border-radius: 12px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .file-info-large { flex: 1; overflow: hidden; }
+        .file-info-large h4 { font-size: 0.95rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-info-large p { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+        .file-action-btn { width: 35px; height: 35px; border-radius: 50%; background: var(--ios-blue); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
 
-        .file-icon svg {
-            width: 24px;
-            height: 24px;
-            fill: var(--text-primary);
-        }
+        /* Progress Bar overlay for sending */
+        .progress-overlay { position: absolute; bottom: 0; left: 0; height: 4px; background: #34c759; width: 0%; transition: width 0.1s; }
 
-        .file-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .file-name {
-            font-weight: 600;
-            font-size: 0.9rem;
-            max-width: 200px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .file-size {
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.7);
-        }
-
-        .download-btn {
-            background-color: transparent;
-            border: 1px solid var(--text-primary);
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            width: auto;
-            margin-top: 8px;
-        }
-
-        .download-btn:hover {
-            background-color: var(--text-primary);
-            color: var(--bg-primary);
-        }
-
-        /* Progress Bar */
-        .progress-container {
-            width: 100%;
-            height: 6px;
-            background-color: var(--bg-tertiary);
-            border-radius: 3px;
-            margin-top: 8px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background-color: var(--success);
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-
-        /* Drag & Drop Overlay */
-        .drag-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(15, 23, 42, 0.9);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 4px dashed var(--accent-primary);
-            border-radius: var(--border-radius-md);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity var(--transition-speed);
-        }
-
-        .drag-overlay.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        .drag-overlay svg {
-            width: 80px;
-            height: 80px;
-            fill: var(--accent-primary);
-            margin-bottom: 20px;
-        }
-
-        /* ==========================================================================
-           INPUT AREA
-           ========================================================================== */
-        .chat-input-container {
-            padding: 20px;
-            background-color: var(--bg-primary);
-            border-top: 1px solid var(--bg-tertiary);
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .file-input-wrapper {
+        /* --- Input Area (iOS Style) --- */
+        .input-dock {
+            padding: 15px 25px 25px 25px;
+            background: rgba(30, 30, 35, 0.8);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-top: 1px solid rgba(255,255,255,0.1);
             position: relative;
         }
 
-        input[type="file"] {
-            display: none;
-        }
-
-        .icon-btn {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background-color: var(--bg-tertiary);
+        /* Toolbar (GIF, Sticker, File) */
+        .accessory-toolbar {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color var(--transition-speed);
-            padding: 0;
+            gap: 15px;
+            margin-bottom: 10px;
+            padding: 0 10px;
+        }
+        .toolbar-btn {
+            background: none; border: none; color: rgba(255,255,255,0.6); font-size: 1.2rem; cursor: pointer; transition: var(--transition);
+        }
+        .toolbar-btn:hover { color: var(--ios-blue); transform: scale(1.1); }
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 25px;
+            padding: 8px 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .icon-btn:hover {
-            background-color: #475569;
+        .action-add {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+            display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; font-size: 1.2rem; transition: var(--transition); margin-bottom: 4px;
+        }
+        .action-add:hover { background: var(--ios-blue); color: white; transform: rotate(90deg); }
+
+        .main-input {
+            flex: 1; background: transparent; border: none; color: white; font-size: 1.1rem;
+            max-height: 120px; overflow-y: auto; padding: 10px 0; resize: none; outline: none; line-height: 1.4;
+        }
+        .main-input::placeholder { color: rgba(255,255,255,0.4); }
+
+        .btn-send {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--ios-blue); color: white; border: none;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition); margin-bottom: 3px; transform: scale(0); opacity: 0;
+        }
+        .btn-send.active { transform: scale(1); opacity: 1; }
+        .btn-send:hover { background: #0066d6; }
+        .btn-send i { margin-left: -2px; margin-top: 2px; } /* Optical alignment */
+
+        /* --- Emoji Picker Popover --- */
+        .emoji-picker-container {
+            position: absolute; bottom: 90px; left: 20px;
+            display: none; z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); border-radius: 15px; overflow: hidden;
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .emoji-picker-container.visible { display: block; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        emoji-picker {
+            --background: #1c1c1e; --border-color: rgba(255,255,255,0.1); --indicator-color: var(--ios-blue);
+            --button-hover-background: rgba(255,255,255,0.1); --input-border-color: rgba(255,255,255,0.2);
         }
 
-        .icon-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: var(--text-primary);
+        /* --- GIF Picker Popover (Simulated) --- */
+        .gif-picker {
+            position: absolute; bottom: 90px; left: 60px; width: 320px; height: 400px;
+            background: rgba(30,30,35,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px;
+            display: none; flex-direction: column; z-index: 100; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
+        .gif-picker.visible { display: flex; animation: popIn 0.2s; }
+        .gif-search { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .gif-search input { width: 100%; padding: 8px 15px; border-radius: 15px; background: rgba(0,0,0,0.3); border: none; color: white; outline: none; }
+        .gif-grid { flex: 1; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow-y: auto; }
+        .gif-item { height: 100px; background: rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; background-size: cover; background-position: center; transition: transform 0.2s; }
+        .gif-item:hover { transform: scale(1.05); }
 
-        .message-input {
-            flex: 1;
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--bg-tertiary);
-            border-radius: var(--border-radius-lg);
-            padding: 12px 20px;
-            color: var(--text-primary);
-            font-size: 1rem;
-            outline: none;
+        /* --- Overlays & Modals --- */
+        .blocker-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 20, 25, 0.8); backdrop-filter: blur(10px);
+            z-index: 50; display: flex; align-items: center; justify-content: center; flex-direction: column;
         }
-
-        .message-input:focus {
-            border-color: var(--accent-primary);
-        }
-
-        .send-btn {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background-color: var(--accent-primary);
-            padding: 0;
-        }
-
-        .send-btn:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .send-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: white;
-            margin-left: 3px; /* visual center adjustment */
-        }
-
-        /* ==========================================================================
-           ANIMATIONS & UTILITIES
-           ========================================================================== */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .hidden {
-            display: none !important;
-        }
+        .blocker-content { text-align: center; color: white; }
+        .blocker-content i { font-size: 4rem; color: rgba(255,255,255,0.2); margin-bottom: 20px; }
+        .blocker-content h3 { font-size: 1.5rem; margin-bottom: 10px; font-weight: 500; }
         
-        .disabled-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.7);
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(2px);
+        .drag-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 122, 255, 0.2); backdrop-filter: blur(5px);
+            z-index: 200; display: none; align-items: center; justify-content: center; flex-direction: column;
+            border: 4px dashed var(--ios-blue); border-radius: 30px;
         }
+        .drag-overlay.active { display: flex; animation: pulseBorder 1.5s infinite; }
+        .drag-overlay i { font-size: 5rem; color: var(--ios-blue); margin-bottom: 20px; text-shadow: 0 0 20px rgba(0,122,255,0.5); }
+        .drag-overlay h2 { color: white; font-size: 2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
 
-        .disabled-overlay p {
-            background: var(--bg-secondary);
-            padding: 10px 20px;
-            border-radius: var(--border-radius-lg);
-            border: 1px solid var(--bg-tertiary);
-            font-weight: bold;
-        }
+        @keyframes pulseBorder { 0% { border-color: rgba(0,122,255,0.5); } 50% { border-color: rgba(0,122,255,1); } 100% { border-color: rgba(0,122,255,0.5); } }
+
+        .hidden { display: none !important; }
+
+        /* Utilities */
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
+
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
 
     <div class="app-container">
         
         <div class="sidebar" id="sidebar">
             <div class="brand">
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                <i class="fa-brands fa-connectdevelop"></i>
                 Nexus P2P
             </div>
 
             <div id="initPanel">
-                <div class="panel-card">
-                    <div class="section-title">Your Identity Code</div>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
-                        Generating secure WebRTC peer ID...
-                    </p>
-                    <div class="code-display" id="myPeerId">...</div>
-                    <button class="btn-secondary" id="btnCopyCode">
-                        <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-                        Copy My Code
+                <div class="glass-panel">
+                    <div class="section-title"><i class="fa-solid fa-fingerprint"></i> Your Identity</div>
+                    <div class="code-display" id="myPeerId">GENERATING...</div>
+                    <button class="btn-glass" id="btnCopyCode">
+                        <i class="fa-regular fa-copy"></i> Copy Secure ID
                     </button>
                 </div>
 
-                <div class="panel-card">
-                    <div class="section-title">Connect to Friend</div>
-                    <input type="text" id="targetPeerId" placeholder="Paste friend's code here..." autocomplete="off">
-                    <button class="btn-primary" id="btnConnect">
-                        <svg style="width:18px;height:18px;fill:currentColor" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-                        Establish Connection
+                <div class="glass-panel">
+                    <div class="section-title"><i class="fa-solid fa-satellite-dish"></i> Establish Tunnel</div>
+                    <input type="text" id="targetPeerId" placeholder="Paste friend's ID here..." autocomplete="off">
+                    <button class="btn-ios" id="btnConnect">
+                        <i class="fa-solid fa-link"></i> Connect
                     </button>
                 </div>
             </div>
 
             <div id="activeConnectionPanel" class="hidden">
-                <div class="panel-card">
-                    <div class="section-title">Connection Status</div>
-                    <p style="color: var(--success); font-weight: bold; margin-bottom: 15px;">Encrypted P2P Tunnel Active</p>
-                    <button class="btn-danger" id="btnDisconnect">Disconnect Session</button>
+                <div class="glass-panel" style="border-color: rgba(52, 199, 89, 0.3);">
+                    <div class="section-title" style="color: #34c759;"><i class="fa-solid fa-shield-halved"></i> Tunnel Active</div>
+                    <p style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 20px; line-height: 1.5;">
+                        End-to-end encrypted WebRTC channel established. Data routes peer-to-peer.
+                    </p>
+                    <button class="btn-danger" id="btnDisconnect">
+                        <i class="fa-solid fa-plug-circle-xmark"></i> Sever Connection
+                    </button>
                 </div>
             </div>
 
-            <div style="flex: 1;"></div>
-
-            <div class="status-indicator" id="globalStatus">
-                <div class="dot" id="statusDot"></div>
-                <span id="statusText">Initializing Node...</span>
+            <div class="status-dock">
+                <div class="status-pulse" id="statusDot"></div>
+                <span id="statusText" style="font-size: 0.85rem; font-weight: 500;">Initializing Network...</span>
             </div>
         </div>
 
         <div class="chat-area">
             
-            <div id="inputBlocker" class="disabled-overlay">
-                <p>Waiting for connection...</p>
+            <div id="inputBlocker" class="blocker-overlay">
+                <div class="blocker-content">
+                    <i class="fa-regular fa-comments"></i>
+                    <h3>No Active Session</h3>
+                    <p style="color: rgba(255,255,255,0.5);">Share your ID or connect to a peer to begin.</p>
+                </div>
             </div>
 
             <div class="drag-overlay" id="dragOverlay">
-                <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.36 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                <i class="fa-solid fa-cloud-arrow-up"></i>
                 <h2>Drop file to send securely</h2>
             </div>
 
             <div class="chat-header">
-                <div class="peer-info">
-                    <div class="avatar" id="peerAvatar">?</div>
-                    <div>
-                        <div class="peer-name" id="peerNameHeader">Not Connected</div>
-                        <div class="peer-status" id="peerSubHeader">Waiting for peer...</div>
+                <div class="peer-profile">
+                    <div class="avatar-ring offline" id="avatarRing">
+                        <div class="avatar-inner" id="peerAvatar"><i class="fa-solid fa-user"></i></div>
                     </div>
+                    <div class="peer-details">
+                        <h2 id="peerNameHeader">Disconnected</h2>
+                        <p id="peerSubHeader"><span class="online-dot" style="background:gray;"></span> Waiting for connection</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="icon-action" title="Voice Call (Coming Soon)"><i class="fa-solid fa-phone"></i></div>
+                    <div class="icon-action" title="Video Call (Coming Soon)"><i class="fa-solid fa-video"></i></div>
+                    <div class="icon-action" title="Information"><i class="fa-solid fa-circle-info"></i></div>
                 </div>
             </div>
 
             <div class="chat-history" id="chatHistory">
-                <div class="system-message">Welcome to Nexus P2P. End-to-end encrypted.</div>
-            </div>
+                <div class="system-msg"><i class="fa-solid fa-lock"></i> Messages and files are end-to-end encrypted.</div>
+                </div>
 
-            <div class="chat-input-container">
-                <div class="file-input-wrapper">
-                    <input type="file" id="fileInput">
-                    <button class="icon-btn" id="btnAttachFile" title="Send File">
-                        <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
+            <div class="input-dock">
+                
+                <div class="accessory-toolbar">
+                    <button class="toolbar-btn" id="btnToggleEmoji" title="Emojis"><i class="fa-regular fa-face-smile"></i></button>
+                    <button class="toolbar-btn" id="btnToggleGif" title="GIFs"><i class="fa-solid fa-photo-film"></i></button>
+                    <button class="toolbar-btn" id="btnAttachFileSecondary" title="Attach File"><i class="fa-solid fa-paperclip"></i></button>
+                </div>
+
+                <div class="input-wrapper">
+                    <button class="action-add" id="btnAttachFilePrimary" title="Quick Add">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <textarea class="main-input" id="messageInput" placeholder="iMessage (P2P)..." rows="1"></textarea>
+                    <button class="btn-send" id="btnSend">
+                        <i class="fa-solid fa-arrow-up"></i>
                     </button>
                 </div>
-                
-                <input type="text" class="message-input" id="messageInput" placeholder="Type a secure message..." autocomplete="off">
-                
-                <button class="send-btn" id="btnSend" title="Send Message">
-                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                </button>
+
+                <input type="file" id="fileInput">
+
+                <div class="emoji-picker-container" id="emojiPickerContainer">
+                    <emoji-picker></emoji-picker>
+                </div>
+
+                <div class="gif-picker" id="gifPicker">
+                    <div class="gif-search"><input type="text" placeholder="Search Tenor (Simulated)..."></div>
+                    <div class="gif-grid">
+                        <div class="gif-item" style="background-image: url('https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif');" onclick="sendSimulatedGif('https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif')"></div>
+                        <div class="gif-item" style="background-image: url('https://media.giphy.com/media/l0HlOBZcl7sbV6Vg8/giphy.gif');" onclick="sendSimulatedGif('https://media.giphy.com/media/l0HlOBZcl7sbV6Vg8/giphy.gif')"></div>
+                        <div class="gif-item" style="background-image: url('https://media.giphy.com/media/xT0xezQGU5xCDJuCPe/giphy.gif');" onclick="sendSimulatedGif('https://media.giphy.com/media/xT0xezQGU5xCDJuCPe/giphy.gif')"></div>
+                        <div class="gif-item" style="background-image: url('https://media.giphy.com/media/26AHONQ79FdWZhAIw/giphy.gif');" onclick="sendSimulatedGif('https://media.giphy.com/media/26AHONQ79FdWZhAIw/giphy.gif')"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
     <script>
-        /**
-         * P2P Chat Application Logic
-         * Utilizes PeerJS for reliable signaling and automated SDP exchange.
-         * Implements DataChannel chunking to support large file transfers safely over WebRTC.
-         */
+        // --- Core Variables ---
+        const CHUNK_SIZE = 16384; 
+        let peer = null;
+        let conn = null;
+        let lastSender = null; // Used for grouping messages
+        
+        // File State
+        let receivingFile = false;
+        let incomingFileInfo = null;
+        let incomingFileData = [];
+        let bytesReceived = 0;
+        let currentFileUI = null;
+        
+        let fileToSend = null;
+        let currentChunk = 0;
+        let totalChunks = 0;
+        let sendingFileId = null;
+        let sendingFileUI = null;
 
         // --- DOM Elements ---
         const UI = {
@@ -669,507 +629,493 @@
             btnConnect: document.getElementById('btnConnect'),
             btnDisconnect: document.getElementById('btnDisconnect'),
             initPanel: document.getElementById('initPanel'),
-            activeConnectionPanel: document.getElementById('activeConnectionPanel'),
+            activePanel: document.getElementById('activeConnectionPanel'),
             statusDot: document.getElementById('statusDot'),
             statusText: document.getElementById('statusText'),
+            inputBlocker: document.getElementById('inputBlocker'),
+            
             chatHistory: document.getElementById('chatHistory'),
             messageInput: document.getElementById('messageInput'),
             btnSend: document.getElementById('btnSend'),
-            fileInput: document.getElementById('fileInput'),
-            btnAttachFile: document.getElementById('btnAttachFile'),
-            inputBlocker: document.getElementById('inputBlocker'),
-            dragOverlay: document.getElementById('dragOverlay'),
+            
             peerNameHeader: document.getElementById('peerNameHeader'),
             peerSubHeader: document.getElementById('peerSubHeader'),
-            peerAvatar: document.getElementById('peerAvatar')
-        };
+            peerAvatar: document.getElementById('peerAvatar'),
+            avatarRing: document.getElementById('avatarRing'),
+            
+            fileInput: document.getElementById('fileInput'),
+            btnAttachPrimary: document.getElementById('btnAttachFilePrimary'),
+            btnAttachSecondary: document.getElementById('btnAttachFileSecondary'),
+            dragOverlay: document.getElementById('dragOverlay'),
 
-        // --- Application State ---
-        let peer = null;
-        let conn = null;
-        const CHUNK_SIZE = 16384; // 16KB max for stable WebRTC data channel transmission
-        
-        // File receiving state
-        let receivingFile = false;
-        let incomingFileInfo = null;
-        let incomingFileData = [];
-        let bytesReceived = 0;
-        let currentFileUI = null; // Reference to the DOM element showing progress
+            btnToggleEmoji: document.getElementById('btnToggleEmoji'),
+            emojiContainer: document.getElementById('emojiPickerContainer'),
+            emojiPicker: document.querySelector('emoji-picker'),
+            
+            btnToggleGif: document.getElementById('btnToggleGif'),
+            gifPicker: document.getElementById('gifPicker')
+        };
 
         // --- Initialization ---
         function initApp() {
-            updateStatus('Connecting to signaling server...', 'warning');
+            setStatus('Connecting to network...', 'pulse');
+            const randomId = generateID();
             
-            // Generate a random, easy to share code (alphanumeric, 6 chars)
-            const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-            
-            // Initialize PeerJS
-            // Using public cloud server. No backend required by user.
             peer = new Peer(randomId, {
-                debug: 2,
-                config: {'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
-                ]}
+                debug: 1,
+                config: {'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }]}
             });
 
-            // PeerJS Events
             peer.on('open', (id) => {
                 UI.myPeerId.textContent = id;
-                updateStatus('Node Ready. Awaiting connection.', 'warning');
-                UI.statusDot.className = 'dot'; // Yellow
+                setStatus('Network Ready', 'error'); // Yellow-ish initially
+                UI.statusDot.style.background = '#ffcc00';
             });
 
-            // Handle incoming connection
-            peer.on('connection', (connection) => {
-                // If we already have a connection, reject new ones
+            peer.on('connection', (c) => {
                 if (conn && conn.open) {
-                    connection.on('open', () => {
-                        connection.send({ type: 'system', data: 'Peer is currently busy.' });
-                        setTimeout(() => connection.close(), 500);
-                    });
+                    c.on('open', () => { c.send({ type: 'sys', msg: 'Busy' }); setTimeout(()=>c.close(), 500); });
                     return;
                 }
-                setupConnection(connection);
+                setupConnection(c);
             });
 
             peer.on('error', (err) => {
-                console.error('PeerJS Error:', err);
-                updateStatus(`Error: ${err.type}`, 'error');
-                if (err.type === 'peer-unavailable') {
-                    appendSystemMessage('Failed to connect: Friend code not found.');
-                }
+                console.error(err);
+                setStatus(`Error: ${err.type}`, 'error');
             });
         }
 
-        // --- Connection Management ---
-        function setupConnection(connection) {
-            conn = connection;
-            updateStatus('Negotiating P2P tunnel...', 'warning');
+        function generateID() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+            return result;
+        }
+
+        // --- Connection Logic ---
+        function setupConnection(c) {
+            conn = c;
+            setStatus('Negotiating...', 'pulse');
 
             conn.on('open', () => {
-                updateStatus('Connected', 'connected');
-                togglePanels(true);
-                UI.peerNameHeader.textContent = `Peer: ${conn.peer}`;
-                UI.peerSubHeader.textContent = 'Encrypted Channel Active';
-                UI.peerAvatar.textContent = conn.peer.substring(0, 2);
-                appendSystemMessage('Secure peer-to-peer connection established.');
+                setStatus('Tunnel Active', 'connected');
+                toggleUIState(true);
+                updateHeader(conn.peer, true);
+                appendSystemMsg('Secure session established.');
             });
 
-            conn.on('data', handleIncomingData);
-
-            conn.on('close', () => {
-                handleDisconnection();
-            });
-
-            conn.on('error', (err) => {
-                console.error('Connection error:', err);
-                handleDisconnection();
-            });
+            conn.on('data', handleData);
+            conn.on('close', handleDisconnect);
+            conn.on('error', handleDisconnect);
         }
 
-        function handleDisconnection() {
-            updateStatus('Node Ready. Awaiting connection.', 'warning');
-            togglePanels(false);
-            UI.peerNameHeader.textContent = 'Not Connected';
-            UI.peerSubHeader.textContent = 'Waiting for peer...';
-            UI.peerAvatar.textContent = '?';
-            appendSystemMessage('Peer disconnected. Channel closed.');
-            conn = null;
-            // Reset file states
-            receivingFile = false;
-            incomingFileData = [];
+        function handleDisconnect() {
+            setStatus('Network Ready', 'error');
+            UI.statusDot.style.background = '#ffcc00';
+            toggleUIState(false);
+            updateHeader('Disconnected', false);
+            appendSystemMsg('Session ended.');
+            conn = null; lastSender = null;
         }
 
         // --- UI Updates ---
-        function updateStatus(text, state) {
+        function setStatus(text, stateClass) {
             UI.statusText.textContent = text;
-            UI.statusDot.className = `dot ${state}`;
+            UI.statusDot.className = `status-pulse ${stateClass}`;
         }
 
-        function togglePanels(isConnected) {
-            if (isConnected) {
+        function toggleUIState(isConnected) {
+            if(isConnected) {
                 UI.initPanel.classList.add('hidden');
-                UI.activeConnectionPanel.classList.remove('hidden');
+                UI.activePanel.classList.remove('hidden');
                 UI.inputBlocker.classList.add('hidden');
             } else {
                 UI.initPanel.classList.remove('hidden');
-                UI.activeConnectionPanel.classList.add('hidden');
+                UI.activePanel.classList.add('hidden');
                 UI.inputBlocker.classList.remove('hidden');
             }
         }
 
-        function scrollToBottom() {
-            UI.chatHistory.scrollTop = UI.chatHistory.scrollHeight;
+        function updateHeader(name, isOnline) {
+            if(isOnline) {
+                UI.peerNameHeader.textContent = `Peer: ${name}`;
+                UI.peerSubHeader.innerHTML = `<span class="online-dot"></span> Encrypted Tunnel`;
+                UI.peerAvatar.textContent = name.substring(0,2);
+                UI.avatarRing.classList.remove('offline');
+            } else {
+                UI.peerNameHeader.textContent = name;
+                UI.peerSubHeader.innerHTML = `<span class="online-dot" style="background:gray;"></span> Waiting for connection`;
+                UI.peerAvatar.innerHTML = '<i class="fa-solid fa-user"></i>';
+                UI.avatarRing.classList.add('offline');
+            }
         }
 
-        function formatBytes(bytes, decimals = 2) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-        }
-
-        function getTimeString() {
-            const now = new Date();
-            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        function scrollBottom() {
+            setTimeout(() => { UI.chatHistory.scrollTop = UI.chatHistory.scrollHeight; }, 50);
         }
 
         // --- Message Rendering ---
-        function appendSystemMessage(text) {
+        function appendSystemMsg(msg) {
             const div = document.createElement('div');
-            div.className = 'system-message';
-            div.textContent = text;
+            div.className = 'system-msg';
+            div.textContent = msg;
             UI.chatHistory.appendChild(div);
-            scrollToBottom();
+            lastSender = null;
+            scrollBottom();
         }
 
-        function appendTextMessage(sender, text) {
-            const wrapper = document.createElement('div');
-            wrapper.className = `message-wrapper ${sender === 'me' ? 'me' : 'them'}`;
+        // Creates grouping for consecutive messages
+        function getMessageGroup(sender) {
+            if (lastSender === sender) {
+                return UI.chatHistory.lastElementChild;
+            } else {
+                const group = document.createElement('div');
+                group.className = `msg-group ${sender}`;
+                UI.chatHistory.appendChild(group);
+                lastSender = sender;
+                return group;
+            }
+        }
+
+        function appendText(sender, text) {
+            const group = getMessageGroup(sender);
             
             const bubble = document.createElement('div');
-            bubble.className = 'message-bubble';
-            bubble.textContent = text; // textContent prevents XSS HTML injection
-
-            const time = document.createElement('div');
-            time.className = 'message-time';
-            time.textContent = getTimeString();
-
-            wrapper.appendChild(bubble);
-            wrapper.appendChild(time);
-            UI.chatHistory.appendChild(wrapper);
-            scrollToBottom();
+            bubble.className = 'bubble';
+            bubble.textContent = text; // Safe text injection
+            
+            // Time meta
+            let meta = group.querySelector('.msg-meta');
+            if(meta) meta.remove(); // Move time to bottom
+            meta = document.createElement('div');
+            meta.className = 'msg-meta';
+            meta.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            group.appendChild(bubble);
+            group.appendChild(meta);
+            scrollBottom();
         }
 
-        function createFileUI(sender, filename, filesize, id) {
-            const wrapper = document.createElement('div');
-            wrapper.className = `message-wrapper ${sender === 'me' ? 'me' : 'them'}`;
-            wrapper.id = `file-wrapper-${id}`;
-
+        function appendMedia(sender, type, src, filename) {
+            const group = getMessageGroup(sender);
             const bubble = document.createElement('div');
-            bubble.className = 'message-bubble';
-            bubble.style.backgroundColor = 'transparent';
-            bubble.style.padding = '0';
-            bubble.style.boxShadow = 'none';
+            bubble.className = 'bubble';
+            bubble.style.padding = '4px'; // tighter for media
+            
+            const preview = document.createElement('div');
+            preview.className = 'media-preview';
+            
+            if (type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = src; img.onload = scrollBottom;
+                preview.appendChild(img);
+            } else if (type.startsWith('video/')) {
+                const vid = document.createElement('video');
+                vid.src = src; vid.controls = true;
+                preview.appendChild(vid);
+            } else if (type.startsWith('audio/')) {
+                const aud = document.createElement('audio');
+                aud.src = src; aud.controls = true;
+                preview.appendChild(aud);
+            } else if (type === 'gif') {
+                 const img = document.createElement('img');
+                 img.src = src; img.onload = scrollBottom;
+                 preview.appendChild(img);
+            }
+            
+            bubble.appendChild(preview);
+            group.appendChild(bubble);
+            scrollBottom();
+        }
 
-            const attachment = document.createElement('div');
-            attachment.className = 'file-attachment';
+        function appendFileCard(sender, name, size, id) {
+            const group = getMessageGroup(sender);
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.style.padding = '0';
+            bubble.style.background = 'transparent';
+            bubble.style.border = 'none';
+
+            const card = document.createElement('div');
+            card.className = 'file-card';
+            card.id = `file-card-${id}`;
 
             const icon = document.createElement('div');
-            icon.className = 'file-icon';
-            icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>';
+            icon.className = 'file-icon-large';
+            icon.innerHTML = '<i class="fa-solid fa-file-lines"></i>';
 
             const info = document.createElement('div');
-            info.className = 'file-info';
+            info.className = 'file-info-large';
+            info.innerHTML = `<h4>${name}</h4><p>${formatBytes(size)}</p>`;
             
-            const nameEl = document.createElement('div');
-            nameEl.className = 'file-name';
-            nameEl.textContent = filename;
-            nameEl.title = filename;
+            const action = document.createElement('div');
+            action.id = `file-action-${id}`;
+            action.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color:var(--ios-blue);"></i>`;
 
-            const sizeEl = document.createElement('div');
-            sizeEl.className = 'file-size';
-            sizeEl.textContent = formatBytes(filesize);
+            const progress = document.createElement('div');
+            progress.className = 'progress-overlay';
+            progress.id = `progress-${id}`;
 
-            // Progress Bar Container
-            const progressContainer = document.createElement('div');
-            progressContainer.className = 'progress-container';
-            progressContainer.id = `progress-container-${id}`;
-            
-            const progressBar = document.createElement('div');
-            progressBar.className = 'progress-bar';
-            progressBar.id = `progress-bar-${id}`;
-            
-            progressContainer.appendChild(progressBar);
+            card.appendChild(icon);
+            card.appendChild(info);
+            card.appendChild(action);
+            card.appendChild(progress);
+            bubble.appendChild(card);
+            group.appendChild(bubble);
+            scrollBottom();
 
-            info.appendChild(nameEl);
-            info.appendChild(sizeEl);
-            info.appendChild(progressContainer);
-
-            // Container for download button (hidden initially)
-            const actionContainer = document.createElement('div');
-            actionContainer.id = `action-container-${id}`;
-
-            attachment.appendChild(icon);
-            attachment.appendChild(info);
-            
-            bubble.appendChild(attachment);
-            bubble.appendChild(actionContainer);
-
-            const time = document.createElement('div');
-            time.className = 'message-time';
-            time.textContent = getTimeString();
-
-            wrapper.appendChild(bubble);
-            wrapper.appendChild(time);
-            UI.chatHistory.appendChild(wrapper);
-            scrollToBottom();
-
-            return {
-                progressBar: progressBar,
-                progressContainer: progressContainer,
-                actionContainer: actionContainer
-            };
+            return { card, progress, action };
         }
 
-        // --- Data Handling & File Chunking ---
-
-        function handleIncomingData(data) {
-            if (data.type === 'text') {
-                appendTextMessage('them', data.payload);
-            } 
-            else if (data.type === 'system') {
-                appendSystemMessage(data.data);
-            }
-            else if (data.type === 'file-start') {
-                // Prepare to receive file
+        // --- Data Handling ---
+        function handleData(data) {
+            if (data.type === 'txt') {
+                appendText('them', data.payload);
+            } else if (data.type === 'gif') {
+                appendMedia('them', 'gif', data.payload);
+            } else if (data.type === 'f-start') {
                 receivingFile = true;
                 incomingFileInfo = data.meta;
                 incomingFileData = [];
                 bytesReceived = 0;
-                
-                // Create UI
-                currentFileUI = createFileUI('them', incomingFileInfo.name, incomingFileInfo.size, incomingFileInfo.id);
-            }
-            else if (data.type === 'file-chunk') {
-                if (!receivingFile) return;
-                
-                // Collect chunk
+                currentFileUI = appendFileCard('them', incomingFileInfo.name, incomingFileInfo.size, incomingFileInfo.id);
+            } else if (data.type === 'f-chunk') {
+                if(!receivingFile) return;
                 const chunk = new Uint8Array(data.payload);
                 incomingFileData.push(chunk);
                 bytesReceived += chunk.byteLength;
-
-                // Update Progress UI
-                if (currentFileUI) {
-                    const percent = Math.min((bytesReceived / incomingFileInfo.size) * 100, 100);
-                    currentFileUI.progressBar.style.width = `${percent}%`;
+                
+                if(currentFileUI) {
+                    const pct = (bytesReceived / incomingFileInfo.size) * 100;
+                    currentFileUI.progress.style.width = `${pct}%`;
                 }
 
-                // Check if complete
                 if (bytesReceived >= incomingFileInfo.size) {
-                    finalizeIncomingFile();
+                    finishReceiveFile();
                 } else {
-                    // Tell sender we are ready for next chunk (throttling to prevent overflow)
-                    conn.send({ type: 'file-ack', id: incomingFileInfo.id });
+                    conn.send({type: 'f-ack', id: incomingFileInfo.id});
                 }
-            }
-            else if (data.type === 'file-ack') {
-                // Sender received ack, send next chunk
-                sendNextChunk();
+            } else if (data.type === 'f-ack') {
+                sendChunk();
             }
         }
 
-        function finalizeIncomingFile() {
+        function finishReceiveFile() {
             receivingFile = false;
-            
-            // Reconstruct Blob
-            const blob = new Blob(incomingFileData, { type: incomingFileInfo.mimeType });
+            const blob = new Blob(incomingFileData, {type: incomingFileInfo.mime});
             const url = URL.createObjectURL(blob);
-
-            // Update UI: Hide progress, show download
-            if (currentFileUI) {
-                currentFileUI.progressContainer.style.display = 'none';
-                
-                const btn = document.createElement('button');
-                btn.className = 'btn-primary download-btn';
-                btn.innerHTML = 'Save File';
-                btn.onclick = () => {
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = incomingFileInfo.name;
-                    a.click();
-                };
-                currentFileUI.actionContainer.appendChild(btn);
-            }
             
-            appendSystemMessage(`File received: ${incomingFileInfo.name}`);
-            incomingFileData = []; // clear memory
+            // Check if media for preview
+            const isMedia = incomingFileInfo.mime.startsWith('image/') || incomingFileInfo.mime.startsWith('video/') || incomingFileInfo.mime.startsWith('audio/');
+            
+            if(currentFileUI) {
+                currentFileUI.progress.style.display = 'none';
+                
+                if (isMedia) {
+                    // Replace card with media preview
+                    const bubble = currentFileUI.card.parentElement;
+                    bubble.innerHTML = ''; // clear card
+                    bubble.style.padding = '4px';
+                    
+                    const preview = document.createElement('div');
+                    preview.className = 'media-preview';
+                    
+                    if (incomingFileInfo.mime.startsWith('image/')) {
+                        const img = document.createElement('img'); img.src = url; preview.appendChild(img);
+                    } else if (incomingFileInfo.mime.startsWith('video/')) {
+                        const vid = document.createElement('video'); vid.src = url; vid.controls = true; preview.appendChild(vid);
+                    } else if (incomingFileInfo.mime.startsWith('audio/')) {
+                        const aud = document.createElement('audio'); aud.src = url; aud.controls = true; preview.appendChild(aud);
+                    }
+                    bubble.appendChild(preview);
+                } else {
+                    // Show download button
+                    currentFileUI.action.innerHTML = '';
+                    const btn = document.createElement('button');
+                    btn.className = 'file-action-btn';
+                    btn.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
+                    btn.onclick = () => { const a=document.createElement('a'); a.href=url; a.download=incomingFileInfo.name; a.click(); };
+                    currentFileUI.action.appendChild(btn);
+                }
+            }
+            incomingFileData = [];
         }
 
         // --- Sending Logic ---
-
-        // State for sending files
-        let fileToSend = null;
-        let fileReader = null;
-        let currentChunk = 0;
-        let totalChunks = 0;
-        let sendingFileId = null;
-        let sendingFileUI = null;
-
-        function sendMessage() {
-            const text = UI.messageInput.value.trim();
-            if (!text || !conn || !conn.open) return;
-
-            // Send text over DataChannel
-            conn.send({ type: 'text', payload: text });
-            
-            // Render locally
-            appendTextMessage('me', text);
+        function sendText() {
+            const txt = UI.messageInput.value.trim();
+            if(!txt || !conn || !conn.open) return;
+            conn.send({type: 'txt', payload: txt});
+            appendText('me', txt);
             UI.messageInput.value = '';
+            UI.messageInput.style.height = 'auto'; // reset height
+            UI.btnSend.classList.remove('active');
             UI.messageInput.focus();
+            hidePopovers();
         }
 
-        function processAndSendFile(file) {
-            if (!conn || !conn.open) return;
-            if (fileToSend) {
-                alert("A file transfer is already in progress.");
-                return;
-            }
+        // Global for HTML onClick
+        window.sendSimulatedGif = function(url) {
+            if(!conn || !conn.open) return;
+            conn.send({type: 'gif', payload: url});
+            appendMedia('me', 'gif', url);
+            hidePopovers();
+        };
+
+        function startFileTransfer(file) {
+            if(!conn || !conn.open) return;
+            if(fileToSend) { alert("Transfer in progress"); return; }
 
             fileToSend = file;
             sendingFileId = Date.now().toString();
             totalChunks = Math.ceil(file.size / CHUNK_SIZE);
             currentChunk = 0;
 
-            // Create Sender UI
-            sendingFileUI = createFileUI('me', file.name, file.size, sendingFileId);
+            sendingFileUI = appendFileCard('me', file.name, file.size, sendingFileId);
 
-            // Send Metadata
             conn.send({
-                type: 'file-start',
-                meta: {
-                    id: sendingFileId,
-                    name: file.name,
-                    size: file.size,
-                    mimeType: file.type || 'application/octet-stream'
-                }
+                type: 'f-start',
+                meta: { id: sendingFileId, name: file.name, size: file.size, mime: file.type || 'application/octet-stream' }
             });
 
-            // Delay slighty to let receiver UI initialize, then start sending
-            setTimeout(sendNextChunk, 100);
+            setTimeout(sendChunk, 50);
         }
 
-        function sendNextChunk() {
-            if (!fileToSend || !conn || !conn.open) return;
-
+        function sendChunk() {
+            if(!fileToSend || !conn || !conn.open) return;
             const start = currentChunk * CHUNK_SIZE;
             const end = Math.min(fileToSend.size, start + CHUNK_SIZE);
             const slice = fileToSend.slice(start, end);
 
-            fileReader = new FileReader();
-            fileReader.onload = (e) => {
-                const arrayBuffer = e.target.result;
-                conn.send({
-                    type: 'file-chunk',
-                    id: sendingFileId,
-                    payload: arrayBuffer
-                });
-
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                conn.send({ type: 'f-chunk', id: sendingFileId, payload: e.target.result });
                 currentChunk++;
                 
-                // Update Sender Progress UI
-                const percent = Math.min(((currentChunk * CHUNK_SIZE) / fileToSend.size) * 100, 100);
-                if (sendingFileUI) {
-                    sendingFileUI.progressBar.style.width = `${percent}%`;
+                if(sendingFileUI) {
+                    sendingFileUI.progress.style.width = `${(currentChunk/totalChunks)*100}%`;
                 }
 
-                // If finished sending
-                if (currentChunk >= totalChunks) {
-                    if (sendingFileUI) {
-                        sendingFileUI.progressContainer.style.display = 'none';
-                        const check = document.createElement('div');
-                        check.style.color = 'var(--success)';
-                        check.style.fontSize = '0.8rem';
-                        check.style.marginTop = '8px';
-                        check.innerHTML = '✓ Sent completely';
-                        sendingFileUI.actionContainer.appendChild(check);
+                if(currentChunk >= totalChunks) {
+                    if(sendingFileUI) {
+                        sendingFileUI.progress.style.display = 'none';
+                        sendingFileUI.action.innerHTML = '<i class="fa-solid fa-check" style="color:#34c759;"></i>';
+                        
+                        // If it was media, transform it locally too (using object URL)
+                        const isMedia = fileToSend.type.startsWith('image/') || fileToSend.type.startsWith('video/') || fileToSend.type.startsWith('audio/');
+                        if(isMedia) {
+                           const url = URL.createObjectURL(fileToSend);
+                           const bubble = sendingFileUI.card.parentElement;
+                           bubble.innerHTML = '';
+                           bubble.style.padding = '4px';
+                           const preview = document.createElement('div'); preview.className = 'media-preview';
+                           if(fileToSend.type.startsWith('image/')){ const i=document.createElement('img'); i.src=url; preview.appendChild(i);}
+                           else if(fileToSend.type.startsWith('video/')){ const v=document.createElement('video'); v.src=url; v.controls=true; preview.appendChild(v);}
+                           else if(fileToSend.type.startsWith('audio/')){ const a=document.createElement('audio'); a.src=url; a.controls=true; preview.appendChild(a);}
+                           bubble.appendChild(preview);
+                        }
                     }
-                    appendSystemMessage(`File sent: ${fileToSend.name}`);
-                    
-                    // Reset sender state
-                    fileToSend = null;
-                    fileReader = null;
-                    sendingFileId = null;
-                    sendingFileUI = null;
+                    fileToSend = null; sendingFileId = null; sendingFileUI = null;
                 }
-                // Note: The loop continues when receiver sends 'file-ack' back to throttle.
             };
-            fileReader.readAsArrayBuffer(slice);
+            reader.readAsArrayBuffer(slice);
         }
-
 
         // --- Event Listeners ---
 
+        // Auto-resize textarea & show send button
+        UI.messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight < 120 ? this.scrollHeight : 120) + 'px';
+            if(this.value.trim().length > 0) UI.btnSend.classList.add('active');
+            else UI.btnSend.classList.remove('active');
+        });
+        UI.messageInput.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); }
+        });
+
+        UI.btnSend.addEventListener('click', sendText);
+
+        // Connection UI
         UI.btnCopyCode.addEventListener('click', () => {
-            const code = UI.myPeerId.textContent;
-            if (code !== '...') {
-                navigator.clipboard.writeText(code).then(() => {
-                    const originalText = UI.btnCopyCode.innerHTML;
-                    UI.btnCopyCode.innerHTML = '✓ Copied!';
-                    setTimeout(() => { UI.btnCopyCode.innerHTML = originalText; }, 2000);
-                });
-            }
+            navigator.clipboard.writeText(UI.myPeerId.textContent);
+            const orig = UI.btnCopyCode.innerHTML;
+            UI.btnCopyCode.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+            setTimeout(()=> UI.btnCopyCode.innerHTML = orig, 2000);
         });
 
         UI.btnConnect.addEventListener('click', () => {
-            const targetId = UI.targetPeerId.value.trim().toUpperCase();
-            if (!targetId) return;
-            if (targetId === peer.id) {
-                alert("You cannot connect to yourself.");
-                return;
-            }
-            
-            updateStatus('Initiating connection...', 'warning');
-            const connection = peer.connect(targetId, { reliable: true });
-            setupConnection(connection);
+            const id = UI.targetPeerId.value.trim().toUpperCase();
+            if(!id) return;
+            setStatus('Connecting...', 'pulse');
+            const c = peer.connect(id, {reliable: true});
+            setupConnection(c);
         });
 
-        UI.btnDisconnect.addEventListener('click', () => {
-            if (conn) {
-                conn.close();
-            }
-        });
+        UI.btnDisconnect.addEventListener('click', () => { if(conn) conn.close(); });
 
-        UI.btnSend.addEventListener('click', sendMessage);
-        
-        UI.messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        // File Input bridging
-        UI.btnAttachFile.addEventListener('click', () => {
-            UI.fileInput.click();
-        });
-
+        // File Inputs
+        const triggerFile = () => UI.fileInput.click();
+        UI.btnAttachPrimary.addEventListener('click', triggerFile);
+        UI.btnAttachSecondary.addEventListener('click', triggerFile);
         UI.fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                processAndSendFile(e.target.files[0]);
-                // Reset input so same file can be selected again if needed
-                UI.fileInput.value = ''; 
-            }
+            if(e.target.files.length > 0) { startFileTransfer(e.target.files[0]); UI.fileInput.value = ''; }
         });
 
-        // Drag and Drop Logic
-        window.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            if (conn && conn.open) {
-                UI.dragOverlay.classList.add('active');
-            }
-        });
-
-        window.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            // Prevent flickering when dragging over child elements
-            if (e.relatedTarget === null || !e.relatedTarget.closest('.app-container')) {
-                UI.dragOverlay.classList.remove('active');
-            }
-        });
-
+        // Drag/Drop
+        window.addEventListener('dragover', (e) => { e.preventDefault(); if(conn && conn.open) UI.dragOverlay.classList.add('active'); });
+        window.addEventListener('dragleave', (e) => { e.preventDefault(); if(!e.relatedTarget) UI.dragOverlay.classList.remove('active'); });
         window.addEventListener('drop', (e) => {
-            e.preventDefault();
-            UI.dragOverlay.classList.remove('active');
-            
-            if (conn && conn.open && e.dataTransfer.files.length > 0) {
-                processAndSendFile(e.dataTransfer.files[0]);
+            e.preventDefault(); UI.dragOverlay.classList.remove('active');
+            if(conn && conn.open && e.dataTransfer.files.length > 0) startFileTransfer(e.dataTransfer.files[0]);
+        });
+
+        // Popovers (Emojis / GIFs)
+        function hidePopovers() {
+            UI.emojiContainer.classList.remove('visible');
+            UI.gifPicker.classList.remove('visible');
+        }
+        
+        UI.btnToggleEmoji.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVis = UI.emojiContainer.classList.contains('visible');
+            hidePopovers();
+            if(!isVis) UI.emojiContainer.classList.add('visible');
+        });
+
+        UI.btnToggleGif.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVis = UI.gifPicker.classList.contains('visible');
+            hidePopovers();
+            if(!isVis) UI.gifPicker.classList.add('visible');
+        });
+
+        // Emoji selection listener
+        UI.emojiPicker.addEventListener('emoji-click', event => {
+            UI.messageInput.value += event.detail.unicode;
+            UI.btnSend.classList.add('active');
+            UI.messageInput.focus();
+        });
+
+        // Close popovers on outside click
+        document.addEventListener('click', (e) => {
+            if(!UI.emojiContainer.contains(e.target) && !UI.btnToggleEmoji.contains(e.target) &&
+               !UI.gifPicker.contains(e.target) && !UI.btnToggleGif.contains(e.target)) {
+                hidePopovers();
             }
         });
 
-        // Boot Application
-        initApp();
+        // Utils
+        function formatBytes(bytes) {
+            if(bytes === 0) return '0 B';
+            const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
 
+        // Start
+        initApp();
     </script>
 </body>
 </html>
