@@ -1273,7 +1273,17 @@
                 });
 
                 btnAuth.addEventListener('click', () => {
-                    State.myName = nameInp.value.trim();
+                    const inputVal = document.getElementById('inName').value.trim();
+                    const simplified = inputVal.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    const GLOBAL_BANNED = new RegExp(BANNED_REGEX.source.replace(/\\b/g, ''), 'i');
+                
+                    // FINAL GATEKEEPER
+                    if (BANNED_REGEX.test(inputVal) || GLOBAL_BANNED.test(simplified)) {
+                        alert("CRITICAL ERROR: Chosen handle contains prohibited terms. Connection refused.");
+                        return; // Hard stop - the code below never runs
+                    }
+                
+                    State.myName = inputVal;
                     localStorage.setItem('jm_name', State.myName);
                     btnAuth.disabled = true;
                     NetSys.connect();
