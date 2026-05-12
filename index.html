@@ -418,7 +418,7 @@
 
         /* "Me" Bubbles */
         .me .bubble {
-            background: linear-gradient(135deg, rgba(0, 198, 255, 0.15) 0%, rgba(0, 114, 255, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(0, 255, 135, 1.0) 100%, rgba(0, 114, 255, 0.05) 100%);
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(0, 198, 255, 0.3);
             color: #fff;
@@ -1144,9 +1144,7 @@
                 // LIQUID GLASS LOGIC APPLIED HERE
                 bubble.className = `bubble liquid ${count === 0 ? 'single' : 'bottom'}`;
 
-                if (type === 'text') {
-                    bubble.innerHTML = `<div style="font-size:11px; color:hsl(${(senderName.split('').reduce((a, b) => a + b.charCodeAt(0), 0) * 137) % 360}, 70%, 75%); margin-bottom:4px; font-weight:700;">${senderName}</div><span>${payload}</span><div class="msg-ts" style="font-size:10px; color:var(--text-tertiary); margin-top:4px; text-align:right; opacity:0; transition:opacity 0.3s;">${Utils.formatTime(timestamp)}</div>`; bubble.onclick = (e) => { const ts = e.currentTarget.querySelector('.msg-ts'); ts.style.opacity = '1'; setTimeout(() => ts.style.opacity = '0', 1000); };
-                }
+                if (type === 'text') { const nTag = document.createElement('div'); nTag.style = `font-size:10px; color:hsl(${(senderName.split('').reduce((a, b) => a + b.charCodeAt(0), 0) * 137) % 360}, 65%, 70%); margin-bottom:2px; margin-left:12px; font-weight:600;`; nTag.textContent = senderName; wrap.prepend(nTag); bubble.innerHTML = `<span>${payload}</span><div class="msg-ts" style="font-size:10px; color:var(--text-tertiary); margin-top:4px; text-align:right; opacity:0; transition:opacity 0.3s;">${Utils.formatTime(timestamp)}</div>`; bubble.onclick = (e) => { const ts = e.currentTarget.querySelector('.msg-ts'); ts.style.opacity = '1'; setTimeout(() => ts.style.opacity = '0', 1000); }; }
                 else if (type === 'image') {
                     bubble.classList.add('media');
                     const img = document.createElement('img');
