@@ -1145,8 +1145,8 @@
                 bubble.className = `bubble liquid ${count === 0 ? 'single' : 'bottom'}`;
 
                 if (type === 'text') {
-                    bubble.textContent = payload;
-                } 
+                    bubble.innerHTML = `<div style="font-size:11px; color:hsl(${(senderName.split('').reduce((a, b) => a + b.charCodeAt(0), 0) * 137) % 360}, 70%, 75%); margin-bottom:4px; font-weight:700;">${senderName}</div><span>${payload}</span><div class="msg-ts" style="font-size:10px; color:var(--text-tertiary); margin-top:4px; text-align:right; opacity:0; transition:opacity 0.3s;">${Utils.formatTime(timestamp)}</div>`; bubble.onclick = (e) => { const ts = e.currentTarget.querySelector('.msg-ts'); ts.style.opacity = '1'; setTimeout(() => ts.style.opacity = '0', 1000); };
+                }
                 else if (type === 'image') {
                     bubble.classList.add('media');
                     const img = document.createElement('img');
