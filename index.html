@@ -997,7 +997,7 @@
             publish(topicSuffix, data) {
                 if(!State.client || !State.client.connected) return;
                 const fullTopic = topicSuffix.startsWith(CONFIG.ROOT_TOPIC) ? topicSuffix : CONFIG.ROOT_TOPIC + topicSuffix;
-                State.client.publish(fullTopic, JSON.stringify(data), { qos: 0 });
+                State.client.publish(fullTopic, JSON.stringify(data), { qos: 0, retain: topicSuffix.includes('universal') });
             }
 
             handleMessage(topic, rawPayload) {
@@ -1143,8 +1143,8 @@
                 const bubble = document.createElement('div');
                 // LIQUID GLASS LOGIC APPLIED HERE
                 bubble.className = `bubble liquid ${count === 0 ? 'single' : 'bottom'}`;
-
-                if (type === 'text') { wrap.querySelectorAll('.sender-name-label').forEach(el => el.remove()); const nTag = document.createElement('div'); nTag.className = 'sender-name-label'; nTag.style = `font-size:9px; color:hsl(${(senderName.split('').reduce((a, b) => a + b.charCodeAt(0), 0) * 137) % 360}, 60%, 75%); margin: 0 0 2px 12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;`; nTag.textContent = senderName; wrap.prepend(nTag); bubble.innerHTML = `<span>${payload}</span><div class="msg-ts" style="font-size:9px; color:var(--text-tertiary); margin-top:4px; text-align:right; opacity:0; transition:opacity 0.3s; pointer-events:none;">${Utils.formatTime(timestamp)}</div>`; bubble.onclick = (e) => { const ts = e.currentTarget.querySelector('.msg-ts'); ts.style.opacity = '1'; setTimeout(() => ts.style.opacity = '0', 1000); }; }
+                
+                if (type === 'text') { wrap.querySelectorAll('.msg-meta').forEach(el => el.remove()); const nTag = document.createElement('div'); nTag.className = 'msg-meta'; nTag.style = `font-size:9px; color:hsl(${(senderName.split('').reduce((a, b) => a + b.charCodeAt(0), 0) * 137) % 360}, 60%, 75%); margin: 0 0 2px 12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;`; nTag.textContent = senderName; const tsTag = document.createElement('div'); tsTag.className = 'msg-meta'; tsTag.style = `font-size:9px; color:var(--text-tertiary); margin: 2px 12px 0; text-align:${dir === 'me' ? 'right' : 'left'}; opacity:0; transition:opacity 0.3s;`; tsTag.textContent = Utils.formatTime(timestamp); wrap.prepend(nTag); wrap.append(tsTag); bubble.innerHTML = `<span>${payload}</span>`; bubble.onclick = () => { tsTag.style.opacity = tsTag.style.opacity === '0' ? '1' : '0'; setTimeout(() => tsTag.style.opacity = '0', 2000); }; }
                 else if (type === 'image') {
                     bubble.classList.add('media');
                     const img = document.createElement('img');
